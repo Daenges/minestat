@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Json;
@@ -512,6 +513,39 @@ namespace MineStatLib
       Version = "<= 1.3";
       
       return ConnStatus.Success;
+    }
+
+    /// <summary>
+    /// Internal helper method for converting the server icon from bytes to an image.
+    /// </summary>
+    /// <param name="base64ImageString">Content of <favicon> in the servers response.</param>
+    /// <returns>Server icon as an image or null if the given bytes do not create a valid image</returns>
+    private Image ConvertServerBytesToImage(string base64ImageString)
+    {
+      // Remove the header: 'data:image/png;base64,'
+      if (base64ImageString.StartsWith("data:image/png;base64,"))
+            base64ImageString = base64ImageString.Substring(base64ImageString.IndexOf(',') + 1);
+
+      // Convert the base64 encrypted string to a memory stream
+      using (MemoryStream ms = new MemoryStream(Convert.FromBase64String(base64ImageString)))
+      {
+        try
+        {
+          // return a valid image
+          return Image.FromStream(ms);
+        }
+        catch (Exception ex)
+        {
+          // Catch invalid image bytes or stream == null
+          if (ex is ArgumentException || ex is OutOfMemoryException)
+          {
+            return null;
+          }
+
+          // Something else happened.
+          throw;
+        }
+      }
     }
 
     /// <summary>
